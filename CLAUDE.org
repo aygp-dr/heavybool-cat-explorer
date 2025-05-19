@@ -1,0 +1,28 @@
+#+TITLE: CLAUDE.org
+#+AUTHOR: aygp-dr
+#+DATE: 2025-05-19
+#+PROPERTY: header-args :mkdirp yes
+
+* CLAUDE.org
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+** Build and Test Commands
+
+- Run all examples: =make run-examples=
+- Run all tests: =make test=
+- Run a single test: =guile tests/test-name.scm=
+- Run a specific example: =guile examples/example-name.scm=
+- Clean project: =make clean=
+
+** Code Style Guidelines
+
+- *File Structure*: Place implementation in =src/=, tests in =tests/=, examples in =examples/=
+- *Naming*: Use kebab-case for functions and variables (e.g., =heavy-bool=)
+- *Modules*: Use =-m= suffix for monadic versions of functions (e.g., =and-m=, =not-m=)
+- *Comments*: Include brief comment header at top of each file
+- *Error Handling*: Use =ensure-heavy-bool= for type checking
+- *Testing*: Include both positive tests and counterexample analysis
+- *Documentation*: Maintain literate programming in Org mode format
+- *Imports*: Use relative paths with =load= for importing modules
+- *Org Mode Format*: Use =#+PROPERTY: header-args :mkdirp yes= in Org documents

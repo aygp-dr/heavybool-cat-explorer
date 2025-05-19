@@ -1,0 +1,187 @@
+#+TITLE: Category Theory of HeavyBool
+#+AUTHOR: Jason Walsh
+#+DATE: 2025-05-19
+#+OPTIONS: toc:3 num:3 
+#+PROPERTY: header-args:scheme :results output :exports both :eval yes
+#+PROPERTY: header-args:mermaid :file images/diagrams/:results file :exports both
+
+* HeavyBool from a Category Theory Perspective
+
+** The Writer Monad Structure
+
+HeavyBool is an instance of the Writer monad, where:
+- Values track their computation history (reasons/explanations)
+- Every value carries its own explanation
+
+*** The Monad Laws
+
+1. *Left Identity*: return a >>= f ≡ f a
+   - When we wrap a boolean in HeavyBool and then transform it, 
+     it's equivalent to just applying the transform directly
+
+2. *Right Identity*: m >>= return ≡ m
+   - Transforming a HeavyBool by just wrapping its value preserves the original
+
+3. *Associativity*: (m >>= f) >>= g ≡ m >>= (λx → f x >>= g)
+   - The order of applying transformations doesn't matter
+
+We can verify these laws with HeavyBool:
+
+#+begin_src scheme
+(load "./src/heavybool-monad.scm")
+
+;; Test left identity
+(define test-value #t)
+(define f (lambda (x) (annotate (make-heavy-bool x '()) '((op . "test")))))
+
+(display "Left identity: ")
+(display (equal? (bind-bool (return-bool test-value) f)
+                (f test-value)))
+(newline)
+
+;; Test right identity
+(define m (make-heavy-bool #t '(((op . "original")))))
+(display "Right identity: ")
+(display (equal? (bind-bool m return-bool)
+                m))
+(newline)
+
+;; Test associativity
+(define g (lambda (x) (annotate (make-heavy-bool x '()) '((op . "second")))))
+(display "Associativity: ")
+(display (equal? (bind-bool (bind-bool m f) g)
+                (bind-bool m (lambda (x) (bind-bool (f x) g)))))
+(newline)
+#+end_src
+
+** HeavyBool as a Functor
+
+A functor is a mapping between categories that preserves structure:
+
+1. It maps objects to objects
+2. It maps morphisms to morphisms
+3. It preserves identity and composition
+
+For HeavyBool:
+- Objects: Boolean values → HeavyBool values
+- Morphisms: Logical operations → HeavyBool operations
+
+The functor laws:
+1. fmap id = id
+2. fmap (f . g) = fmap f . fmap g
+
+#+begin_src scheme
+(load "./src/heavybool.scm")
+
+;; Identity function
+(define (id x) x)
+
+;; Example functions
+(define (negate x) (not x))
+(define (is-true x) (eq? x #t))
+
+;; Function composition
+(define ((compose f g) x) (f (g x)))
+
+;; Functor mapping (fmap)
+(define (fmap f hb)
+  (make-heavy-bool (f (heavy-bool-value hb))
+                  (heavy-bool-because hb)))
+
+;; Test functor identity law
+(define test-hb (make-heavy-bool #t '(((reason . "test")))))
+(display "Functor identity law: ")
+(display (equal? (fmap id test-hb) test-hb))
+(newline)
+
+;; Test functor composition law
+(display "Functor composition law: ")
+(display (equal? (fmap (compose is-true negate) test-hb)
+                (fmap is-true (fmap negate test-hb))))
+(newline)
+#+end_src
+
+** Quantifiers as Natural Transformations
+
+A natural transformation is a mapping between functors that respects structure.
+
+The quantifiers transform predicate functors (Collection → Bool) into 
+HeavyBool functors (Collection → HeavyBool) in a "natural" way:
+
+#+begin_src scheme
+(load "./src/heavybool-quantifiers.scm")
+
+;; Define example predicates
+(define (greater-than-zero? x) (> x 0))
+(define (even? x) (= (remainder x 2) 0))
+
+;; Define test collection
+(define test-coll '(-2 -1 0 1 2 3 4))
+
+;; Lifting a predicate to HeavyBool
+(define (lift-predicate pred)
+  (lambda (x) (make-heavy-bool (pred x) '())))
+
+;; Test natural transformation properties
+(display "Natural transformation test:\n")
+
+;; Apply forall directly to the composite predicate
+(define result1 
+  (forall-m 'x 
+            (lambda (x) 
+              (make-heavy-bool
+               (and (greater-than-zero? x) (even? x))
+               '()))
+            test-coll))
+
+;; Apply forall separately and combine results
+(define result2
+  (and-m (forall-m 'x 
+                  (lambda (x) 
+                    (make-heavy-bool (greater-than-zero? x) '()))
+                  test-coll)
+         (forall-m 'x 
+                  (lambda (x) 
+                    (make-heavy-bool (even? x) '()))
+                  test-coll)))
+
+(display "Results have same boolean value: ")
+(display (eq? (heavy-bool-value result1) 
+              (heavy-bool-value result2)))
+(newline)
+#+end_src
+
+** The Kleisli Category
+
+HeavyBool forms a Kleisli category where:
+- Objects are types (Boolean)
+- Morphisms are functions that return HeavyBools
+- Composition is Kleisli composition (using bind)
+
+#+begin_src scheme
+(load "./src/heavybool-monad.scm")
+
+;; Define Kleisli morphisms
+(define (f-morphism x)
+  (make-heavy-bool (not x) '(((operation . "not")))))
+
+(define (g-morphism x)
+  (make-heavy-bool (and x #t) '(((operation . "and-true")))))
+
+;; Kleisli composition
+(define (kleisli-compose g f)
+  (lambda (x)
+    (bind-bool (f x) g)))
+
+;; Test composition
+(define composite (kleisli-compose g-morphism f-morphism))
+(display "Kleisli composite applied to #t: ")
+(display-heavy-bool (composite #t))
+(newline)
+#+end_src
+
+** Connection to Hofstadter's Strange Loops
+
+The ability of HeavyBool to track its own history creates a form of self-reference,
+similar to Hofstadter's strange loops, where a system can refer to itself and create
+tangled hierarchies.

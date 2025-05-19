@@ -1,0 +1,39 @@
+# Compiled Scheme files
+*.go
+*.so
+*.ss~
+*.ss#*
+.#*.ss
+
+*.scm~
+*.scm#*
+.#*.scm
+
+# Backup files
+*~
+\#*\#
+.\#*
+
+# Generated diagrams
+/images/diagrams/*
+!images/diagrams/.keep
+
+# OS specific files
+.DS_Store
+.directory
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Build artifacts
+/build/
+/compiled/
+/dist/
+
+# Dependency directories
+/node_modules/
+/vendor/

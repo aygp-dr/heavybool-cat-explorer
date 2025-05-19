@@ -1,0 +1,32 @@
+#+TITLE: HeavyBool Category Explorer
+#+AUTHOR: Jason Walsh
+#+DATE: 2025-05-19
+
+* HeavyBool: Reflective Boolean Values with Category Theory
+
+This project implements Jim Newton's HeavyBool concept from ELS'25 in Guile Scheme, with a focus on the category theoretical foundations.
+
+** Overview
+
+HeavyBool extends boolean values with explanatory metadata, allowing:
+- Tracking of reasoning in boolean operations
+- Detection of witnesses and counterexamples in quantifiers
+- Self-referential structures connecting to Hofstadter's strange loops
+
+** Unique Features
+
+- *Writer Monad Structure*: HeavyBool as a practical example of the Writer monad
+- *Natural Transformations*: Quantifiers as natural transformations
+- *Kleisli Category*: Composition of HeavyBool operations
+- *Strange Loops*: Self-referential structures in the style of Hofstadter
+
+** Getting Started
+
+1. Run examples: =make run-examples=
+2. Explore category theory: See =category-theory.org=
+3. Understand strange loops: See =examples/strange-loops.scm=
+
+** References
+
+1. Newton, J. E. (2025). "Programming with Useful Quantifiers." In /Proceedings of the European Lisp Symposium 2025/. [[https://doi.org/10.5281/zenodo.14775258][https://doi.org/10.5281/zenodo.14775258]]
+2. [[https://github.com/jimka2001/heavybool][HeavyBool GitHub Repository]]
