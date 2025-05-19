@@ -37,3 +37,7 @@ Thumbs.db
 # Dependency directories
 /node_modules/
 /vendor/
+
+# Environment files
+.env
+.direnv/
