@@ -41,3 +41,4 @@ Thumbs.db
 # Environment files
 .env
 .direnv/
+**/.claude/settings.local.json

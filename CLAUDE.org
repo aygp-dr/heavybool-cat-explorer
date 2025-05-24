@@ -9,11 +9,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ** Build and Test Commands
 
-- Run all examples: =make run-examples=
+- Run all examples: =make run-examples= or =make= (default)
 - Run all tests: =make test=
-- Run a single test: =guile tests/test-name.scm=
 - Run a specific example: =guile examples/example-name.scm=
-- Clean project: =make clean=
+- Clean temporary files: =make clean=
+- Setup directories: =make setup=
 
 ** Code Style Guidelines
 
