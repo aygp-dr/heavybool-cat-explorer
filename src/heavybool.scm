@@ -1,5 +1,7 @@
 ;; heavybool.scm - Reflective Boolean values with explanations
 
+(use-modules (srfi srfi-9))  ; For define-record-type
+
 ;; Define the heavy-bool record type
 (define-record-type <heavy-bool>
   (make-heavy-bool value because)
@@ -52,10 +54,12 @@
 
 ;; Find reason by key
 (define (find-reason hb key)
+  (unless (heavy-bool? hb)
+    (error "find-reason expects a heavy-bool, got:" hb))
   (let ((reasons (heavy-bool-because hb)))
     (let loop ((reasons reasons))
       (cond ((null? reasons) #f)
-            ((assq key (car reasons)) => cdr)
+            ((and (pair? (car reasons)) (assq key (car reasons))) => cdr)
             (else (loop (cdr reasons)))))))
 
 ;; Find witness value

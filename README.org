@@ -20,11 +20,19 @@ HeavyBool extends boolean values with explanatory metadata, allowing:
 - *Kleisli Category*: Composition of HeavyBool operations
 - *Strange Loops*: Self-referential structures in the style of Hofstadter
 
+** Prerequisites
+
+- GNU Guile 2.2+ (tested with 2.2.7)
+- Make (for running build targets)
+
 ** Getting Started
 
-1. Run examples: =make run-examples=
-2. Explore category theory: See =category-theory.org=
-3. Understand strange loops: See =examples/strange-loops.scm=
+1. Install Guile: =apt install guile-2.2= (Debian/Ubuntu) or =brew install guile= (macOS)
+2. Clone this repository
+3. Run examples: =make run-examples=
+4. Run tests: =make test=
+5. Explore category theory: See =category-theory.org=
+6. Understand strange loops: See =examples/strange-loops.scm=
 
 ** References
 
