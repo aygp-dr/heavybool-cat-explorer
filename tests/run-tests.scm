@@ -26,6 +26,21 @@
 (define (assert-false actual test-name)
   (assert-equal #f actual test-name))
 
+;; Assert that a thunk raises an error
+(define (assert-error thunk test-name)
+  (set! test-count (+ test-count 1))
+  (let ((error-raised #f))
+    (catch #t
+      (lambda () (thunk))
+      (lambda (key . args) (set! error-raised #t)))
+    (if error-raised
+        (begin
+          (set! passed-count (+ passed-count 1))
+          (display (format #f "✓ ~a\n" test-name)))
+        (begin
+          (set! failed-tests (cons test-name failed-tests))
+          (display (format #f "✗ ~a\n  Expected: error to be raised\n  Actual: no error\n" test-name))))))
+
 (define (run-test-suite name thunk)
   (display (format #f "\n=== ~a ===\n" name))
   (thunk)
@@ -203,6 +218,91 @@
            (result (composed #t)))
       (assert-true (heavy-bool-value result) "Kleisli composition works")
       (assert-equal '((step . 1) (step . 2)) (heavy-bool-because result) "Composition accumulates reasons"))))
+
+;; Negative contract tests - verify error handling
+(run-test-suite "Negative Contracts (Error Handling)"
+  (lambda ()
+    ;; ensure-heavy-bool must reject invalid input
+    (assert-error (lambda () (ensure-heavy-bool 42))
+                  "ensure-heavy-bool rejects integer")
+    (assert-error (lambda () (ensure-heavy-bool "string"))
+                  "ensure-heavy-bool rejects string")
+    (assert-error (lambda () (ensure-heavy-bool '(1 2 3)))
+                  "ensure-heavy-bool rejects list")
+
+    ;; forall-m must reject non-procedure predicate
+    (assert-error (lambda () (forall-m 'x 42 '(1 2 3)))
+                  "forall-m rejects non-procedure predicate")
+    (assert-error (lambda () (forall-m 'x "not-a-function" '(1 2 3)))
+                  "forall-m rejects string predicate")
+
+    ;; forall-m must reject non-list items
+    (assert-error (lambda () (forall-m 'x (lambda (x) heavy-true) 42))
+                  "forall-m rejects non-list items (integer)")
+    (assert-error (lambda () (forall-m 'x (lambda (x) heavy-true) "string"))
+                  "forall-m rejects non-list items (string)")
+
+    ;; any-m must reject non-list input
+    (assert-error (lambda () (any-m 42))
+                  "any-m rejects non-list (integer)")
+    (assert-error (lambda () (any-m "string"))
+                  "any-m rejects non-list (string)")
+
+    ;; all-m must reject non-list input
+    (assert-error (lambda () (all-m 42))
+                  "all-m rejects non-list (integer)")
+    (assert-error (lambda () (all-m "string"))
+                  "all-m rejects non-list (string)")
+
+    ;; find-reason must reject non-heavy-bool input
+    (assert-error (lambda () (find-reason 42 'key))
+                  "find-reason rejects integer")
+    (assert-error (lambda () (find-reason #t 'key))
+                  "find-reason rejects plain boolean")
+    (assert-error (lambda () (find-reason '((a . 1)) 'key))
+                  "find-reason rejects alist")))
+
+;; Monad law: Associativity
+(run-test-suite "Monad Associativity Law"
+  (lambda ()
+    ;; Associativity: (m >>= f) >>= g ≡ m >>= (λx → f x >>= g)
+    (let* ((m (make-heavy-bool #t '((start . "m"))))
+           (f (lambda (x) (make-heavy-bool (not x) '((step . "f")))))
+           (g (lambda (x) (make-heavy-bool x '((step . "g")))))
+           ;; Left side: (m >>= f) >>= g
+           (left (bind-bool (bind-bool m f) g))
+           ;; Right side: m >>= (λx → f x >>= g)
+           (right (bind-bool m (lambda (x) (bind-bool (f x) g)))))
+      (assert-equal (heavy-bool-value left) (heavy-bool-value right)
+                    "Monad associativity law (value)")
+      (assert-equal (heavy-bool-because left) (heavy-bool-because right)
+                    "Monad associativity law (reasons)"))))
+
+;; Functor laws
+(run-test-suite "Functor Laws"
+  (lambda ()
+    ;; Functor identity law: fmap id = id
+    (let* ((hb (make-heavy-bool #t '((test . "functor-id"))))
+           (id (lambda (x) x))
+           (result (fmap-bool id hb)))
+      (assert-equal (heavy-bool-value hb) (heavy-bool-value result)
+                    "Functor identity law (value)")
+      (assert-equal (heavy-bool-because hb) (heavy-bool-because result)
+                    "Functor identity law (reasons)"))
+
+    ;; Functor composition law: fmap (f . g) = fmap f . fmap g
+    (let* ((hb (make-heavy-bool #t '((test . "functor-compose"))))
+           (f not)
+           (g (lambda (x) x))  ; identity, so f . g = not
+           (compose (lambda (f g) (lambda (x) (f (g x)))))
+           ;; Left side: fmap (f . g) hb
+           (left (fmap-bool (compose f g) hb))
+           ;; Right side: fmap f (fmap g hb)
+           (right (fmap-bool f (fmap-bool g hb))))
+      (assert-equal (heavy-bool-value left) (heavy-bool-value right)
+                    "Functor composition law (value)")
+      (assert-equal (heavy-bool-because left) (heavy-bool-because right)
+                    "Functor composition law (reasons)"))))
 
 ;; Run all tests
 (display "🧪 RUNNING HEAVYBOOL TEST SUITE 🧪\n")
