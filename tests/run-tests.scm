@@ -67,6 +67,14 @@
       (assert-true (heavy-bool? hb) "make-heavy-bool creates heavy-bool")
       (assert-equal #t (heavy-bool-value hb) "heavy-bool-value returns correct value")
       (assert-equal '((reason . "test")) (heavy-bool-because hb) "heavy-bool-because returns correct reasons"))
+
+    ;; CONTRACT: accessors work correctly for both true and false values
+    (let ((hb-true (make-heavy-bool #t '((val . "true"))))
+          (hb-false (make-heavy-bool #f '((val . "false")))))
+      (assert-true (heavy-bool-value hb-true) "accessor: true value extracted correctly")
+      (assert-false (heavy-bool-value hb-false) "accessor: false value extracted correctly")
+      (assert-equal '((val . "true")) (heavy-bool-because hb-true) "accessor: true reasons extracted correctly")
+      (assert-equal '((val . "false")) (heavy-bool-because hb-false) "accessor: false reasons extracted correctly"))
     
     ;; Test constants
     (assert-true (heavy-bool-value heavy-true) "heavy-true has true value")
@@ -136,6 +144,18 @@
     ;; Test forall-m with some false
     (let ((not-all-positive (forall-m 'x (lambda (x) (make-heavy-bool (> x 0) '())) '(1 -2 3))))
       (assert-false (heavy-bool-value not-all-positive) "forall-m not all positive"))
+
+    ;; CONTRACT: forall-m annotates with witness on failure
+    (let ((result (forall-m 'x (lambda (x) (make-heavy-bool (> x 0) '())) '(1 -2 3))))
+      (assert-equal -2 (find-witness result) "forall-m annotates counterexample as witness"))
+
+    ;; CONTRACT: forall-m short-circuits on first false
+    (let* ((eval-count 0)
+           (counting-pred (lambda (x)
+                            (set! eval-count (+ eval-count 1))
+                            (make-heavy-bool (> x 0) '())))
+           (result (forall-m 'x counting-pred '(1 -2 3 4 5))))
+      (assert-equal 2 eval-count "forall-m short-circuits after first false"))
     
     ;; Test exists-m
     (let ((some-positive (exists-m 'x (lambda (x) (make-heavy-bool (> x 0) '())) '(-1 2 -3))))
@@ -164,6 +184,13 @@
            (result (bind-bool hb f)))
       (assert-false (heavy-bool-value result) "bind-bool applies function")
       (assert-equal '((original . "reason") (operation . "negation")) (heavy-bool-because result) "bind-bool accumulates reasons"))
+
+    ;; CONTRACT: bind-bool uses append semantics (original first, then new)
+    (let* ((hb (make-heavy-bool #t '((first . 1) (second . 2))))
+           (f (lambda (x) (make-heavy-bool x '((third . 3)))))
+           (result (bind-bool hb f)))
+      (assert-equal '((first . 1) (second . 2) (third . 3)) (heavy-bool-because result)
+                    "bind-bool appends in order: original then new"))
     
     ;; Test fmap-bool
     (let* ((hb (make-heavy-bool #t '((test . "fmap"))))
