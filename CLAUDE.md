@@ -52,18 +52,47 @@ bd close <id>         # Complete work
 
 ## Build & Test
 
-_Add your build and test commands here_
-
 ```bash
-# Example:
-# npm install
-# npm test
+make run-examples    # Run all examples (default)
+make test            # Run all tests
+make clean           # Clean temporary files
+make setup           # Setup directories
+guile examples/example-name.scm  # Run specific example
 ```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+HeavyBool extends boolean values with explanatory metadata (Writer monad pattern).
+
+```
+src/
+  heavybool.scm           # Core record type, ensure-heavy-bool, logical ops
+  heavybool-quantifiers.scm  # forall-m, exists-m, any-m, all-m
+  heavybool-monad.scm     # return-bool, bind-bool, kleisli-compose, fmap-bool
+tests/
+  run-tests.scm           # Test framework and all tests
+examples/
+  associativity-test.scm  # Property testing with counterexamples
+  strange-loops.scm       # Self-referential structures
+```
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- **Naming**: Use kebab-case for functions/variables (e.g., `heavy-bool`)
+- **Modules**: Use `-m` suffix for monadic versions (e.g., `and-m`, `not-m`)
+- **File Structure**: Implementation in `src/`, tests in `tests/`, examples in `examples/`
+- **Error Handling**: Use `ensure-heavy-bool` for type checking
+- **Documentation**: Literate programming in Org mode format
+- **Imports**: Use relative paths with `load` for importing modules
+
+## Anti-Goals (MUST NOT)
+
+These are explicit prohibitions — agents MUST NOT violate these:
+
+1. **MUST NOT** change monad law behavior without updating tests
+2. **MUST NOT** remove error checks from `ensure-heavy-bool`, `forall-m`, `any-m`, `all-m`
+3. **MUST NOT** modify `heavy-bool-value` or `heavy-bool-because` accessor behavior
+4. **MUST NOT** change quantifier short-circuit semantics (forall stops on first false)
+5. **MUST NOT** remove witness/counterexample annotation from quantifiers
+6. **MUST NOT** change the reason accumulation order in `bind-bool` (append semantics)
+7. **MUST NOT** add features without corresponding tests for both positive and negative cases
